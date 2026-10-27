@@ -1,0 +1,158 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Formosa Salvaje · Misión Naturaleza</title><style>
+*{box-sizing:border-box}body{margin:0;background:#0a241e;color:white;font-family:system-ui,Arial,sans-serif;overflow:hidden}#scene{position:fixed;inset:0}canvas{display:block}#hud{position:fixed;top:15px;left:15px;right:15px;display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;pointer-events:none}.pill{background:#103a32dd;border:1px solid #a7e4bb77;padding:10px 15px;border-radius:30px;font-weight:750;box-shadow:0 6px 24px #0003}#banner{position:fixed;top:83px;left:50%;transform:translateX(-50%);text-align:center;background:#153f35df;padding:10px 20px;border-radius:15px;max-width:90%;font-size:clamp(14px,2vw,20px)}#overlay{position:fixed;inset:0;background:#07231ccc;display:flex;align-items:center;justify-content:center;padding:18px;z-index:10}.panel{width:min(610px,100%);background:linear-gradient(155deg,#205d49,#123d36);border:2px solid #a3dc8a;border-radius:26px;padding:clamp(20px,4vw,36px);box-shadow:0 25px 70px #0008;text-align:center}.panel h1{font-size:clamp(30px,6vw,49px);margin:0 0 12px;color:#f9d76d}.panel p{line-height:1.5;font-size:17px}button{background:#f4cf5e;border:0;color:#17382a;border-radius:14px;padding:13px 22px;font-size:17px;font-weight:800;cursor:pointer;margin:5px}button:hover{background:#fff0aa}button:focus-visible{outline:3px solid white}#controls{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:7px;align-items:center;background:#103a32c9;padding:8px;border-radius:20px}#controls button{margin:0;padding:10px 15px}#hint{position:fixed;bottom:85px;width:100%;text-align:center;text-shadow:0 2px 5px #000;font-size:14px}#loading{position:fixed;inset:0;display:grid;place-items:center;background:#103a32;font-size:20px;z-index:20}small{color:#cce8dc} .answers{display:flex;flex-wrap:wrap;justify-content:center} @media(max-width:550px){#hud{top:8px;left:8px;right:8px}.pill{font-size:12px;padding:7px 9px}#banner{top:90px}#hint{font-size:12px}}
+#cameraBox{position:fixed;right:14px;bottom:94px;width:180px;background:#123d36e8;border:2px solid #9fe6b0;border-radius:15px;padding:8px;z-index:5;text-align:center;display:none}#preview{width:100%;border-radius:8px;transform:scaleX(-1)}#cameraStatus{font-size:12px;line-height:1.3}#cameraToggle{font-size:13px;padding:8px 12px}#camActions{position:fixed;right:14px;top:155px;z-index:5}#camActions button{font-size:14px;padding:9px 12px}#cameraSource{display:none}@media(max-width:650px){#cameraBox{width:115px;bottom:75px}#camActions{top:150px;right:5px}#camActions button{font-size:11px;padding:7px}}
+</style></head><body><div id="loading">🌿 Preparando los paisajes de Formosa...</div><div id="scene"></div><div id="hud"><div class="pill" id="levelLabel">🌿 Nivel 1 · Bosque nativo</div><div class="pill">⭐ <span id="score">0</span> puntos</div><div class="pill">✨ <span id="leaves">0</span>/3 objetos</div><div class="pill">👣 <span id="steps">0</span> pasos virtuales</div></div><div id="banner">¡Explorá los cinco ambientes naturales de Formosa!</div><div id="hint">Cámara: alterná brazos para avanzar · incliná cabeza para carriles · manos para juntar y responder · Teclado disponible</div><div id="camActions"><button id="cameraToggle">📷 Activar cámara</button></div><div id="cameraBox"><canvas id="preview" width="256" height="192"></canvas><div id="cameraStatus" role="status">Cámara desactivada · control con brazos y cabeza</div></div><video id="cameraSource" playsinline muted autoplay></video><div id="controls"><button id="left" aria-label="Mover a la izquierda">⬅</button><button id="forward">🚶 Avanzar</button><button id="grab">✋ Juntar</button><button id="right" aria-label="Mover a la derecha">➡</button></div><div id="overlay"><div class="panel" id="panel"><h1>🌿 Formosa Salvaje</h1><h2>Misión Naturaleza · Edición 4.2 · Control sin caminar</h2><p>¡Bienvenida a la aventura! Recorré el bosque nativo de Formosa, recolectá tres objetos distintos en cada ambiente y respondé una pregunta para descubrir los cinco niveles de Formosa.</p><p><small>Versión de cinco niveles: funciona con teclado o botones. Podés activar la cámara para jugar sin caminar: basta con mostrar rostro, hombros y brazos. También podés usar el teclado.</small></p><button id="start">🎮 Comenzar aventura</button></div></div><script src="libs/three.min.js"></script><script src="libs/holistic/holistic.js"></script><script>
+(()=>{'use strict';const loading=document.getElementById('loading');if(!window.THREE){loading.innerHTML='Falta Three.js local. Ejecutá el preparador inicial.';return}const T=THREE;let scene=new T.Scene();scene.background=new T.Color(0x8fd8ef);scene.fog=new T.Fog(0x8fd8ef,25,110);const camera=new T.PerspectiveCamera(66,innerWidth/innerHeight,.1,180);camera.position.set(0,5.6,12);camera.lookAt(0,1,-14);const renderer=new T.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;document.getElementById('scene').appendChild(renderer.domElement);scene.add(new T.HemisphereLight(0xe9ffff,0x6b8e47,2));const sun=new T.DirectionalLight(0xffe6a6,2.3);sun.position.set(-15,25,-30);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-30;sun.shadow.camera.right=30;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);
+const mat=(color)=>new T.MeshStandardMaterial({color,roughness:.85});const grass=mat(0x5aaf55),path=mat(0xd4a36d),bark=mat(0x80532f),leafM=[mat(0x2d9147),mat(0x48b15c),mat(0x187846)],gold=new T.MeshStandardMaterial({color:0xffd449,metalness:.3,roughness:.28,emissive:0x7e4e00,emissiveIntensity:.22});
+const levels=[
+ {name:'Bosque nativo',emoji:'🌳',sky:0x8fd8ef,ground:0x5aaf55,road:0xd4a36d,kind:'forest',object:'hojas doradas',intro:'El bosque es una comunidad: árboles, hongos, insectos y animales dependen unos de otros.',q:'Un bosque pierde muchos árboles grandes. ¿Qué consecuencia es más probable?',a:['Habrá más refugios para las aves','Disminuirán los refugios y la sombra','Todos los animales se adaptarán de inmediato'],correct:1,info:'Los árboles brindan sombra, alimento y sitios de nidificación. La pérdida de bosque reduce esos recursos.'},
+ {name:'Bañado La Estrella',emoji:'🪷',sky:0xa3e6f5,ground:0x74b987,road:0xd9ca93,kind:'wetland',object:'gotas turquesa',intro:'¡Entraste al Bañado La Estrella! El agua y las plantas forman un hogar para aves y otros animales.',q:'Después de lluvias intensas, el bañado almacena agua. ¿Por qué esto beneficia a la región?',a:['Porque ayuda a regular el agua y sostiene vida','Porque elimina toda la vegetación','Porque convierte el humedal en un desierto'],correct:0,info:'Los humedales almacenan y liberan agua y ofrecen hábitats a muchas especies.'},
+ {name:'Monte chaqueño',emoji:'🦔',sky:0xf5c48b,ground:0xa7a46c,road:0xc38b56,kind:'chaco',object:'semillas nativas',intro:'En el monte chaqueño, distintas especies conviven en condiciones que pueden ser secas y calurosas.',q:'Un oso hormiguero encuentra menos hormigas por pérdida de hábitat. ¿Qué medida ayuda más?',a:['Dejar basura para atraer insectos','Quitar todos los árboles del monte','Conservar el hábitat y sus fuentes de alimento'],correct:2,info:'Conservar el monte y sus redes alimentarias favorece a especies como el oso hormiguero grande.'},
+ {name:'Ríos de Formosa',emoji:'🐟',sky:0x7ed7f5,ground:0x62b17d,road:0xdac49b,kind:'river',object:'peces azules',intro:'¡Escuchá el río! El agua conecta peces, aves, plantas y comunidades humanas.',q:'Una bolsa de plástico llega al río. ¿Cuál es la mejor decisión para evitar daños?',a:['Dejarla: el río se la lleva','Retirarla de forma segura y disponerla bien','Romperla en pedacitos dentro del agua'],correct:1,info:'Evitar que los residuos lleguen al agua protege la fauna y ayuda a mantener riberas limpias.'},
+ {name:'Santuario de la biodiversidad',emoji:'🦋',sky:0xb3e8d2,ground:0x65b985,road:0xf0d7a0,kind:'sanctuary',object:'mariposas luminosas',intro:'¡Última misión! La naturaleza es una red de relaciones: cada especie cumple una función.',q:'Si disminuyen los insectos polinizadores, ¿qué efecto podría observarse?',a:['Todas las plantas crecerán más rápido','Los ríos se volverán salados','Algunas plantas producirán menos frutos o semillas'],correct:2,info:'Muchísimas plantas dependen de insectos y otros animales para transferir polen y reproducirse.'}
+];
+let levelIndex=0,environment=new T.Group();scene.add(environment);
+function addMesh(geo,material,x,y,z,parent=environment){const o=new T.Mesh(geo,material);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function addBox(w,h,d,m,x,y,z,parent=environment){return addMesh(new T.BoxGeometry(w,h,d),m,x,y,z,parent)}
+function tree(x,z,scale=1,dry=false){addMesh(new T.CylinderGeometry(.2*scale,.34*scale,3*scale,7),bark,x,1.5*scale,z);for(let j=0;j<3;j++){const c=addMesh(new T.IcosahedronGeometry((j===1?1.8:1.25)*scale,1),dry?mat([0x73934c,0x8fa44e,0x5d8240][j]):leafM[j],x+(j-1)*.85*scale,(3.5+(j%2)*.3)*scale,z);c.castShadow=true}}
+function flower(x,z,i){addMesh(new T.SphereGeometry(.13,7,5),mat([0xff8fb2,0xffd968,0xb7a1ff][i%3]),x,.18,z)}
+function animal(kind,x,z,scale=1){const g=new T.Group(),brown=mat(0x98714b),dark=mat(0x43392f),white=mat(0xf8f4dc),pink=mat(0xffb6c8);function sph(r,m,x,y,z,sx=1,sy=1,sz=1){const o=addMesh(new T.SphereGeometry(r,10,8),m,x,y,z,g);o.scale.set(sx,sy,sz);return o}
+ if(kind==='capybara'){sph(.85,brown,0,.9,0,1.35,.8,.85);sph(.48,brown,.9,1.14,0);for(const dx of [-.65,.6])for(const dz of [-.4,.4])sph(.2,dark,dx,.25,dz,.7,1.3,.7);sph(.09,dark,1.28,1.19,.29);sph(.1,dark,1.28,1.19,-.29)}
+ else if(kind==='bird'){sph(.46,white,0,1.65,0,.8,1.1,.7);sph(.24,white,.12,2.25,0);addMesh(new T.ConeGeometry(.14,.58,6),mat(0xe5a23c),.45,2.2,0,g).rotation.z=-Math.PI/2;for(const dz of [-.2,.2])addMesh(new T.CylinderGeometry(.035,.035,1.2,5),mat(0xc77854),0,.65,dz,g);sph(.18,mat(0x202f35),-.2,1.75,.4,1,.5,.7)}
+ else if(kind==='anteater'){sph(.8,brown,0,.82,0,1.3,.65,.65);sph(.35,dark,.85,1.05,0,1.7,.42,.45);sph(.65,dark,-1,.82,0,1.4,.55,.55);for(const dx of [-.5,.5])for(const dz of [-.3,.3])sph(.18,dark,dx,.23,dz,.7,1.2,.7)}
+ else if(kind==='fish'){sph(.5,mat(0x38a6d6),0,1.15,0,1.35,.65,.5);addMesh(new T.ConeGeometry(.43,.7,3),mat(0x187aa6),-.75,1.15,0,g).rotation.z=Math.PI/2;sph(.06,white,.4,1.27,.26)}
+ else if(kind==='butterfly'){sph(.13,dark,0,1.4,0,.65,2,.7);for(const side of [-1,1]){sph(.45,pink,side*.4,1.72,0,.95,1.15,.28);sph(.32,mat(0xf3d353),side*.38,1.15,0,.8,1,.25)}}
+ else if(kind==='armadillo'){sph(.55,mat(0x8d745d),0,.58,0,1.4,.65,.8);for(let i=-2;i<=2;i++)sph(.07,dark,i*.22,.96,0,1,.6,6);sph(.25,brown,.65,.56,0);}
+ g.position.set(x,0,z);g.scale.setScalar(scale);environment.add(g);return g}
+function lily(x,z){addMesh(new T.CylinderGeometry(.46,.46,.045,12),mat(0x358b53),x,.08,z);addMesh(new T.SphereGeometry(.15,7,6),mat(0xf49fc9),x,.23,z)}
+function buildEnvironment(){while(environment.children.length){const c=environment.children[0];environment.remove(c);c.traverse(o=>{if(o.geometry)o.geometry.dispose()})}const l=levels[levelIndex];scene.background=new T.Color(l.sky);scene.fog=new T.Fog(l.sky,30,125);addBox(145,.2,230,mat(l.ground),0,-.15,-65);addBox(11,.08,145,mat(l.road),0,0,-57);for(const x of [-1.8,1.8]){const stripe=addBox(.07,.012,140,mat(0xf9e9b7),x,.07,-57);stripe.material.transparent=true;stripe.material.opacity=.55}
+ for(let i=0;i<38;i++){const z=8-i*3.5;for(const side of [-1,1]){const x=side*(8+(i%4)*1.35);if(l.kind==='forest'||l.kind==='sanctuary')tree(x,z,.75+(i%3)*.13);else if(l.kind==='chaco')tree(x,z,.55+(i%3)*.1,true);else if(i%3===0)tree(x,z,.55);else addMesh(new T.CylinderGeometry(.14,.3,1.1,6),mat(0x4b9365),x,.55,z)}if(i<30&&l.kind!=='chaco'){flower(-6.5-(i%3),z,i);flower(6.5+(i%3),z,i+1)}}
+ if(l.kind==='wetland'){for(const side of [-1,1]){addBox(22,.065,135,mat(0x48b8c7),side*19,-.015,-57);for(let i=0;i<19;i++){const z=3-i*6.5;lily(side*(11+i%7),z);if(i%3===0)animal('bird',side*(12+i%3),z,.75);if(i%5===0)animal('capybara',side*8.5,z,.75)}}}
+ if(l.kind==='river'){for(const side of [-1,1]){addBox(22,.065,135,mat(0x278fce),side*19,-.02,-57);for(let i=0;i<15;i++){const z=3-i*8;animal(i%3===0?'bird':'fish',side*(12+i%5),z,.65);if(i%2===0)addMesh(new T.CylinderGeometry(.12,.23,1.4,6),mat(0x4e9864),side*(8.5+i%3),.7,z)}}}
+ if(l.kind==='chaco'){for(let i=0;i<17;i++){const side=i%2?-1:1,z=1-i*7;animal(i%3===0?'anteater':'armadillo',side*(8.5+i%4),z,.65)}}
+ if(l.kind==='forest'){for(let i=0;i<16;i++){animal(i%3===0?'butterfly':'bird',(i%2?-1:1)*(8.5+i%3),-i*7,.65)}}
+ if(l.kind==='sanctuary'){for(let i=0;i<23;i++){const side=i%2?-1:1,z=3-i*5.5;animal(i%4===0?'capybara':i%3===0?'bird':'butterfly',side*(7.5+i%4),z,.65);addMesh(new T.SphereGeometry(.16,7,5),mat(0xffd37a),side*(6.5+i%3),2.5,z)}}
+}
+// Cartoon explorer avatar, replaced by camera silhouette in a later phase.
+const avatar=new T.Group();let torso=new T.Mesh(new T.CapsuleGeometry(.46,.9,4,8),mat(0xf6a84b));torso.position.y=1.75;avatar.add(torso);let head=new T.Mesh(new T.SphereGeometry(.43,12,10),mat(0xffd0a3));head.position.y=2.75;avatar.add(head);let hat=new T.Mesh(new T.CylinderGeometry(.55,.58,.19,12),mat(0x3b8757));hat.position.y=3.11;avatar.add(hat);for(let x of [-.25,.25]){let leg=new T.Mesh(new T.CapsuleGeometry(.17,.55,4,8),mat(0x326fa0));leg.position.set(x,.65,0);avatar.add(leg)}scene.add(avatar);avatar.position.set(0,0,4.3);
+// Silueta en vivo: máscara de segmentación de MediaPipe, sin guardar ni transmitir video.
+const silhouetteCanvas=document.createElement('canvas');silhouetteCanvas.width=256;silhouetteCanvas.height=384;
+const silhouetteCtx=silhouetteCanvas.getContext('2d');const silhouetteTexture=new T.CanvasTexture(silhouetteCanvas);
+const silhouette=new T.Mesh(new T.PlaneGeometry(2.7,4.05),new T.MeshBasicMaterial({map:silhouetteTexture,transparent:true,depthWrite:false,side:T.DoubleSide}));
+silhouette.position.set(0,2.0,4.3);silhouette.visible=false;scene.add(silhouette);
+
+let items=[];function createItems(){items.forEach(it=>environment.remove(it.mesh));items=[];for(let i=0;i<15;i++){const group=new T.Group(),k=levels[levelIndex].kind;let m;
+ if(k==='forest'){m=addMesh(new T.SphereGeometry(.42,9,7),gold,0,0,0,group);m.scale.set(.7,1.25,.3);m.rotation.z=.4}
+ else if(k==='wetland'){m=addMesh(new T.SphereGeometry(.45,12,9),mat(0x36d5ed),0,0,0,group);m.scale.set(.7,1.25,.65);addMesh(new T.ConeGeometry(.28,.65,9),mat(0x36d5ed),0,.55,0,group)}
+ else if(k==='chaco'){m=addMesh(new T.SphereGeometry(.38,9,7),mat(0xb87537),0,0,0,group);m.scale.set(.7,1.3,.6);addMesh(new T.SphereGeometry(.15,8,6),mat(0xf3c67a),0,.35,0,group)}
+ else if(k==='river'){m=addMesh(new T.SphereGeometry(.38,10,8),mat(0x35b9e8),0,0,0,group);m.scale.set(1.35,.7,.65);addMesh(new T.ConeGeometry(.33,.6,3),mat(0x126d9f),-.62,0,0,group).rotation.z=Math.PI/2}
+ else {m=addMesh(new T.SphereGeometry(.12,9,7),mat(0x5c4567),0,0,0,group);for(const side of [-1,1]){const wing=addMesh(new T.SphereGeometry(.36,9,7),mat(i%2?0xffb2dd:0xfbd35d),side*.33,.1,0,group);wing.scale.set(.85,1.3,.3)}}
+ group.position.set([-3.5,0,3.5][i%3],1.5,-6-i*6.5);environment.add(group);items.push({mesh:group,taken:false})}}
+buildEnvironment();createItems();
+const $=id=>document.getElementById(id);let running=false,paused=false,finished=false,lane=1,progress=0,score=0,leaves=0,steps=0,hold=false,last=performance.now(),distanceStep=0,moveTime=0;const laneX=[-3.5,0,3.5];
+function update(){ $('score').textContent=score;$('leaves').textContent=leaves;$('steps').textContent=steps;$('levelLabel').textContent=levels[levelIndex].emoji+' Nivel '+(levelIndex+1)+' · '+levels[levelIndex].name}
+function move(d){if(!running||paused)return;lane=Math.max(0,Math.min(2,lane+d))}
+function grab(){if(!running||paused)return;let best=null,dist=2.8;for(const it of items){if(it.taken)continue;const dz=Math.abs(it.mesh.position.z-(4.3-progress));const dx=Math.abs(it.mesh.position.x-laneX[lane]);if(dz<dist&&dx<1.6){best=it;dist=dz}}if(best){best.taken=true;environment.remove(best.mesh);leaves++;score+=10;update();$('banner').textContent='✨ ¡Objeto encontrado! +10 puntos';if(leaves>=3){setTimeout(()=>{if(running&&!paused)question()},550)}}else $('banner').textContent='Acercate a un objeto brillante para recogerlo'}
+function forward(dt){if(!running||paused)return;progress=Math.min(95,progress+dt*8);distanceStep+=dt*8;moveTime+=dt;if(distanceStep>=1.5){steps++;distanceStep-=1.5;update()}if(progress>=95&&!paused)question()}
+function question(){if(!running||finished||paused)return;paused=true;hold=false;const l=levels[levelIndex];$('panel').innerHTML='<h1>'+l.emoji+' '+l.name+'</h1><p>'+l.intro+'</p><h2>'+l.q+'</h2><div class="answers"><button data-answer="0">A · '+l.a[0]+'</button><button data-answer="1">B · '+l.a[1]+'</button><button data-answer="2">C · '+l.a[2]+'</button></div><p><small>Podés responder con los botones o levantando una mano frente a la cámara: izquierda = A, derecha = B, ambas = C.</small></p>';$('overlay').style.display='flex';document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.answer)))}
+function answer(choice){if(!document.querySelector('[data-answer]'))return;const l=levels[levelIndex],correct=choice===l.correct;if(correct)score+=30;score+=50;update();$('panel').innerHTML='<h1>'+(correct?'🌟 ¡Muy bien!':'🌿 ¡Seguimos aprendiendo!')+'</h1><p>'+l.info+'</p><p>⭐ '+score+' puntos acumulados</p><button id="continue">'+(levelIndex===4?'🏆 Ver resultados':'➡️ Siguiente nivel')+'</button>';$('continue').onclick=()=>levelIndex===4?finish():nextLevel()}
+function nextLevel(){if(levelIndex>=levels.length-1)return;levelIndex++;progress=0;leaves=0;lane=1;distanceStep=0;camera.position.z=12;avatar.position.set(0,0,4.3);silhouette.position.set(0,2,4.3);buildEnvironment();createItems();update();paused=false;$('overlay').style.display='none';$('banner').textContent='¡Nuevo ambiente! Recolectá 3 '+levels[levelIndex].object+' y descubrí su historia.'}
+function finish(){finished=true;running=false;paused=true;score+=100;update();const cal=(3.5*70*moveTime/3600).toFixed(2);$('panel').innerHTML='<h1>🏆 ¡Guardiana de la Naturaleza Formoseña!</h1><p>¡Completaste los cinco ambientes de Formosa!</p><p>⭐ <b>'+score+'</b> puntos · 👣 '+steps+' pasos estimados · ⏱️ '+Math.round(moveTime)+' segundos en movimiento</p><p>🔥 '+cal+' kcal aproximadas (estimación ilustrativa con 70 kg; no es una medición de salud).</p><p><small>Los pasos son estimaciones del avance virtual, no un podómetro físico. Tu imagen no se guarda ni se envía desde el juego.</small></p><button id="restart">🔄 Volver a jugar</button>';$('overlay').style.display='flex';$('restart').onclick=()=>location.reload()}
+$('start').onclick=()=>{running=true;$('overlay').style.display='none';update()};$('left').onclick=()=>move(-1);$('right').onclick=()=>move(1);$('grab').onclick=grab;const forwardBtn=$('forward');forwardBtn.addEventListener('pointerdown',e=>{e.preventDefault();hold=true;forwardBtn.setPointerCapture(e.pointerId)});for(let event of ['pointerup','pointercancel','lostpointercapture'])forwardBtn.addEventListener(event,()=>hold=false);let keys={};addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','Space','KeyW','KeyA','KeyD'].includes(e.code))e.preventDefault();if(e.repeat)return;keys[e.code]=true;if(e.code==='ArrowLeft'||e.code==='KeyA')move(-1);if(e.code==='ArrowRight'||e.code==='KeyD')move(1);if(e.code==='Space')grab();if(paused&&document.querySelector('[data-answer]')&&['Digit1','Digit2','Digit3'].includes(e.code))answer(Number(e.code.slice(-1))-1);if(e.code==='KeyP'&&running){paused=!paused;$('banner').textContent=paused?'⏸ Juego pausado':'🌿 ¡Seguimos explorando!'}});addEventListener('keyup',e=>keys[e.code]=false);addEventListener('blur',()=>{keys={};hold=false});function animate(now){requestAnimationFrame(animate);let dt=Math.min((now-last)/1000,.06);last=now;if(running&&!paused){if(keys.ArrowUp||keys.KeyW||hold)forward(dt);avatar.position.x+=(laneX[lane]-avatar.position.x)*Math.min(1,dt*9);silhouette.position.x=avatar.position.x;avatar.position.y=(keys.ArrowUp||keys.KeyW||hold)?Math.sin(now*.015)*.12:0;for(let it of items){it.mesh.rotation.y+=dt*1.6;it.mesh.position.y=1.45+Math.sin(now*.003+it.mesh.position.z)*.2}camera.position.z=12-progress;camera.lookAt(0,1,-14-progress);avatar.position.z=4.3-progress;silhouette.position.z=4.3-progress}renderer.render(scene,camera)}requestAnimationFrame(animate);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});// Control corporal opcional: MediaPipe Holistic detecta postura y segmenta el fondo.
+let stream=null,holistic=null,cameraEnabled=false,processing=false,poseBusy=false,calibrating=false;
+ let calibrationSamples=[],neutralTilt=0,lastHeadMoveAt=0,lastGrabAt=0;
+ let lastSwingSide=0,lastSwingAt=0,lastMotionAt=0,gestureArmed=true;
+const video=$('cameraSource'),preview=$('preview'),previewCtx=preview.getContext('2d');
+const camBox=$('cameraBox'),camStatus=$('cameraStatus'),camButton=$('cameraToggle');
+const status=t=>camStatus.textContent=t;
+function drawSilhouette(results){
+ const mask=results.segmentationMask;if(!mask||!results.image)return;
+ const w=silhouetteCanvas.width,h=silhouetteCanvas.height;
+ silhouetteCtx.clearRect(0,0,w,h);
+ silhouetteCtx.save();silhouetteCtx.translate(w,0);silhouetteCtx.scale(-1,1);
+ // Dibujar máscara como alfa y conservar solo los píxeles del jugador.
+ silhouetteCtx.drawImage(mask,0,0,w,h);
+ silhouetteCtx.globalCompositeOperation='source-in';
+ silhouetteCtx.drawImage(results.image,0,0,w,h);
+ silhouetteCtx.restore();silhouetteCtx.globalCompositeOperation='source-over';
+ silhouetteTexture.needsUpdate=true;silhouette.visible=true;avatar.visible=false;
+ previewCtx.clearRect(0,0,preview.width,preview.height);
+ previewCtx.drawImage(silhouetteCanvas,0,0,preview.width,preview.height);
+}
+ function onPose(results){
+  drawSilhouette(results);
+  const pts=results.poseLandmarks;if(!pts)return;
+  const visible=i=>pts[i]&&pts[i].visibility>.48;
+  // No se exigen piernas ni cuerpo completo: alcanza con cabeza, hombros y brazos.
+  if(![0,11,12].every(visible)){
+    status('Mostrá rostro y hombros; para los gestos, mantené las manos a la vista.');return;
+  }
+  const now=performance.now();
+  const shoulders=(pts[11].x+pts[12].x)/2;
+  const width=Math.max(.08,Math.abs(pts[11].x-pts[12].x));
+  // Desplazamiento horizontal de la nariz respecto al centro de los hombros,
+  // normalizado por el ancho de hombros: inclinar la cabeza cambia de carril.
+  const tilt=(pts[0].x-shoulders)/width;
+  if(calibrating){calibrationSamples.push(tilt);status('Calibrando cabeza y brazos… quedate quieta.');return}
+  if(finished)return;
+  const leftUp=visible(15)&&pts[15].y<pts[11].y-.13;
+  const rightUp=visible(16)&&pts[16].y<pts[12].y-.13;
+  // Durante las preguntas, cada gesto requiere soltar las manos antes de repetir.
+  if(paused&&running&&$('overlay').style.display==='flex'&&document.querySelector('[data-answer]')){
+    if(!leftUp&&!rightUp)gestureArmed=true;
+    if((leftUp||rightUp)&&gestureArmed&&now-lastGrabAt>1100){
+      gestureArmed=false;lastGrabAt=now;answer(leftUp&&rightUp?2:leftUp?0:1);
+    }
+    status('Elegí A con mano izquierda, B con derecha o C con ambas.');return;
+  }
+  if(!running||paused){status('🟢 Persona detectada · presioná Comenzar aventura');return}
+  const delta=tilt-neutralTilt;
+  // Evitar cambios de carril por pequeñas oscilaciones o al levantar los brazos.
+  if(!leftUp&&!rightUp&&Math.abs(delta)>.28&&now-lastHeadMoveAt>1050){
+    // La vista del juego está espejada respecto de la cámara.
+    move(delta>0?-1:1);lastHeadMoveAt=now;
+  }
+  if(!leftUp&&!rightUp)gestureArmed=true;
+  if((leftUp||rightUp)&&gestureArmed&&now-lastGrabAt>1050){
+    gestureArmed=false;lastGrabAt=now;grab();
+  }
+  // Marcha simulada con brazos: alternar flexiones de codos, sin mover las piernas.
+  // Muñeca cerca del hombro izquierdo/derecho: brazo activo.
+  const leftBend=visible(15)&&visible(13)&&pts[15].y<pts[13].y+.045;
+  const rightBend=visible(16)&&visible(14)&&pts[16].y<pts[14].y+.045;
+  const side=leftBend&&!rightBend?1:rightBend&&!leftBend?-1:0;
+  if(side&&side!==lastSwingSide&&now-lastSwingAt>230&&!leftUp&&!rightUp){
+    lastSwingSide=side;lastSwingAt=now;lastMotionAt=now;forward(.36);
+  }
+  status('🟢 Jugando · alterná brazos para avanzar · incliná cabeza para cambiar carril');
+ }
+async function stopCamera(){cameraEnabled=false;camButton.textContent='📷 Activar cámara';
+ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+ if(holistic){try{await holistic.close()}catch(e){}holistic=null}
+ video.srcObject=null;silhouette.visible=false;avatar.visible=true;camBox.style.display='none';processing=false;
+}
+async function startCamera(){
+ if(!navigator.mediaDevices?.getUserMedia){alert('Para usar la cámara, abrí el juego con INICIAR_JUEGO.bat (localhost).');return}
+ if(!window.Holistic){alert('Falta MediaPipe local. Ejecutá el preparador inicial.');return}
+ camButton.disabled=true;camBox.style.display='block';status('Solicitando permiso de cámara…');
+ try{
+ stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:640},height:{ideal:480}}});
+ video.srcObject=stream;await video.play();
+ holistic=new Holistic({locateFile:file=>'libs/holistic/'+file});
+ holistic.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:true,smoothSegmentation:true,refineFaceLandmarks:false,minDetectionConfidence:.55,minTrackingConfidence:.55});
+ holistic.onResults(onPose);cameraEnabled=true;calibrating=true;calibrationSamples=[];
+ status('Calibración: mostrá rostro, hombros y brazos durante 3 segundos.');
+ const endCal=performance.now()+3000;
+ async function loop(){
+  if(!cameraEnabled)return;
+  if(!poseBusy&&video.readyState>=2){poseBusy=true;try{await holistic.send({image:video})}catch(e){status('Error de detección: '+e.message)}finally{poseBusy=false}}
+  if(calibrating&&performance.now()>endCal){calibrating=false;if(calibrationSamples.length){neutralTilt=calibrationSamples.reduce((a,b)=>a+b,0)/calibrationSamples.length;status('🟢 ¡Lista! Alterná los brazos para avanzar, sin caminar.')}else status('No se detectó rostro y brazos; probá con más luz.')}
+  if(cameraEnabled)requestAnimationFrame(loop);
+ }
+ requestAnimationFrame(loop);camButton.textContent='⏹ Apagar cámara';
+ }catch(e){status('No se pudo activar: '+e.message);await stopCamera();alert('No se pudo iniciar la cámara: '+e.message)}finally{camButton.disabled=false}
+}
+camButton.onclick=()=>cameraEnabled?stopCamera():startCamera();
+addEventListener('pagehide',()=>{if(stream)stream.getTracks().forEach(t=>t.stop())});
+loading.remove();})();
+</script></body></html>

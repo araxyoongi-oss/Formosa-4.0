@@ -1,0 +1,15 @@
+FORMOSA SALVAJE 4.2 — CORRECCIÓN
+
+CORRECCIONES: biblioteca Three.js clásica compatible (0.149.0); tercera respuesta visible; detección inicial solo con rostro y hombros; brazos y cabeza controlan sin caminar.
+
+IMPORTANTE: el ZIP NO incluye bibliotecas de terceros (no se pudieron descargar en este entorno). Requiere preparación UNA VEZ con internet y Python 3 instalado.
+
+1. Extraer el ZIP entero, no abrir HTML dentro del ZIP.
+2. Con internet: doble clic PREPARAR_UNA_VEZ_CON_INTERNET.bat. Esperar a que indique Listo.
+3. Verificar libs/three.min.js y libs/holistic/holistic.js.
+4. Desconectar internet.
+5. Doble clic INICIAR_JUEGO.bat, abrir Edge en http://localhost:8765. No cerrar la ventana negra.
+6. Activar cámara, permitir permiso, mostrar rostro y hombros, mover brazos alternados.
+
+Si hay errores, presionar F12 en Edge > Consola y compartir mensaje.
+No se ha probado la cámara real en este entorno.
